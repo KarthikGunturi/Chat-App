@@ -1,124 +1,147 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern Chat App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+    :root {
+      --bg: #f9f9fb;
+      --bubble-sent: #dcf8c6;
+      --bubble-received: #f1f0f0;
+      --accent: #4caf50;
+      --text: #222;
+    }
 
-    <title>Chat Room </title>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="/style.css">
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-    <script src="/webjars/jquery/jquery.min.js"></script>
-    <script src="/webjars/sockjs-client/sockjs.min.js"></script>
-    <script src="/webjars/stomp-websocket/stomp.min.js"></script>
-    <script src="/js/script.js"></script>
+    .chat-wrapper {
+      width: 100%;
+      max-width: 420px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      background: white;
+    }
 
+    .header {
+      padding: 1rem;
+      background-color: var(--accent);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--bg);
+    }
+
+    .message {
+      padding: 0.6rem 1rem;
+      max-width: 75%;
+      border-radius: 18px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .sent {
+      align-self: flex-end;
+      background-color: var(--bubble-sent);
+    }
+
+    .received {
+      align-self: flex-start;
+      background-color: var(--bubble-received);
+    }
+
+    .input-box {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    .input-box input {
+      flex: 1;
+      padding: 1rem;
+      border: none;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .input-box button {
+      padding: 1rem 1.2rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    #login-screen {
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    #chat-room {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+    }
+  </style>
 </head>
-<body class="bg-dark " >
-
-<div id="name-from" class="bg-primary d-flex align-items-center">
-
-    <div class="container-fluid">
-
-        <div class="row">
-
-            <div class="col-md-4 offset-md-4">
-
-
-                <div class="input-group">
-
-                    <input type="text"
-                           placeholder="Enter your name"
-                           id="name-value"
-                           autofocus
-                           class="form-control"
-                    >
-
-                    <div class="input-group-append">
-
-                        <button class="btn btn-dark" id="login">Enter</button>
-
-                    </div>
-
-
-
-                </div>
-
-
-
-            </div>
-
-        </div>
-
+<body>
+<div class="chat-wrapper">
+    <div id="login-screen">
+        <h2 style="margin-bottom: 1rem;">👋 Enter Your Name</h2>
+        <input type="text" id="name-value" placeholder="Your name..." style="padding: 0.75rem; width: 100%; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;" />
+        <button id="login" style="padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">Continue</button>
     </div>
 
-</div>
-
-<div id="chat-room" class="d-none">
-
-
-    <div class="container-fluid">
-
-        <div class="row">
-
-
-            <div class="col-md-6 offset-md-3">
-
-
-                <div class="card mt-3">
-                    <div class="card-header">
-
-                        <h3 id="name-title"></h3>
-
-                    </div>
-                    <div class="card-body">
-
-                        <div class="input-group">
-
-                            <input type="text"
-                                   placeholder="Enter your message "
-                                   id="message-value"
-                                   autofocus
-                                   class="form-control"
-                            >
-
-                            <div class="input-group-append">
-
-                                <button class="btn btn-dark" id="send-btn">Send</button>
-                                <button class="btn btn-dark" id="logout">Logout</button>
-
-                            </div>
-
-
-
-                        </div>
-
-
-                        <div class="table-responsive mt-3">
-
-                            <table id="message-container-table">
-
-
-
-                            </table>
-
-                        </div>
-
-
-                    </div>
-                </div>
-
-            </div>
+    <div id="chat-room" style="display: none; flex-direction: column; height: 100%;">
+        <div class="header">
+            <span id="user-name">User</span>
+            <button id="logout" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem;"><i class="fas fa-sign-out-alt"></i></button>
         </div>
-
+        <div class="messages" id="message-container"></div>
+        <div class="input-box">
+            <input type="text" id="message-value" placeholder="Type your message..." />
+            <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
     </div>
-
-
 </div>
 
-
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="js/script.js"></script>
 </body>
 </html>

@@ -1,122 +1,75 @@
-var stompClient=null
+let stompClient = null;
+let name = null;
 
+const connect = () => {
+  const socket = new SockJS("/server1");
+  stompClient = Stomp.over(socket);
 
+  stompClient.connect({}, (frame) => {
+    console.log("Connected: " + frame);
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("chat-room").style.display = "flex";
+    document.getElementById("user-name").textContent = name;
 
-function sendMessage(){
+    stompClient.subscribe("/topic/return-to", (message) => {
+      const data = JSON.parse(message.body);
+      showMessage(data);
+    });
+  });
+};
 
-    let jsonOb={
-        name:localStorage.getItem("name"),
-        content:$("#message-value").val()
+const showMessage = (data) => {
+  const isSent = data.name === name;
+  addMessageToUI(data.name, data.content, isSent);
+};
+
+const addMessageToUI = (sender, content, isSent) => {
+  const messageContainer = document.getElementById("message-container");
+  const messageElement = document.createElement("div");
+  messageElement.classList.add("message");
+  messageElement.classList.add(isSent ? "sent" : "received");
+  messageElement.innerHTML = `<strong>${sender}:</strong> ${content}`;
+  messageContainer.appendChild(messageElement);
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+};
+
+// Events
+
+document.getElementById("login").addEventListener("click", () => {
+  const inputName = document.getElementById("name-value").value.trim();
+  if (!inputName) return alert("Please enter your name");
+  name = inputName;
+  connect();
+});
+
+document.getElementById("send-btn").addEventListener("click", () => {
+  const content = document.getElementById("message-value").value.trim();
+  if (!content) return;
+  const payload = JSON.stringify({ name, content });
+  stompClient.send("/app/message", {}, payload);
+  document.getElementById("message-value").value = "";
+});
+
+document.getElementById("logout").addEventListener("click", () => {
+  if (stompClient) stompClient.disconnect();
+  document.getElementById("chat-room").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("message-container").innerHTML = "";
+  name = null;
+});
+
+// Send user message to your AI backend
+fetch("/ask", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ question: content }),
+})
+  .then((res) => res.json())
+  .then((data) => {
+    if (data && data.answer) {
+      addMessageToUI("AI", data.answer, false);
     }
-
-    stompClient.send("/app/message",{},JSON.stringify(jsonOb));
-}
-
-
-
-function connect()
-{
-
-    let socket=new SockJS("/server1")
-
-    stompClient=Stomp.over(socket)
-
-    stompClient.connect({},function(frame){
-
-        console.log("Connected : "+frame)
-
-        $("#name-from").addClass('d-none')
-        $("#chat-room").removeClass('d-none')
-
-
-        //subscribe
-        stompClient.subscribe("/topic/return-to",function(response){
-
-            showMessage(JSON.parse(response.body))
-
-        })
-
-
-
-    })
-
-}
-
-
-function showMessage(message)
-{
-
-    $("#message-container-table").prepend(`<tr><td><b>${message.name} :</b> ${message.content}</td></tr>`)
-
-}
-
-
-
-
-$(document).ready((e)=>{
-
-
-    $("#login").click(()=>{
-        let name=$("#name-value").val()
-        localStorage.setItem("name",name)
-        $("#name-title").html(`Welcome , <b>${name} </b>`)
-        connect();
-    })
-
-        const inputname = document.getElementById("name-value");
-
-// Execute a function when the user presses a key on the keyboard
-        inputname.addEventListener("keypress", function(event) {
-            // If the user presses the "Enter" key on the keyboard
-            if (event.key === "Enter") {
-                // Cancel the default action, if needed
-                // event.preventDefault();
-                // Trigger the button element with a click
-                document.getElementById("login").click();
-            }
-        });
-
-
-
-    $("#send-btn").click(()=>{
-        sendMessage()
-        const firstNameInput = document.getElementById('message-value');
-        firstNameInput.value=''
-    })
-
-
-
-
-    $("#logout").click(()=>{
-
-        localStorage.removeItem("name")
-        if(stompClient!==null)
-        {
-            stompClient.disconnect()
-
-            $("#name-from").removeClass('d-none')
-            $("#chat-room").addClass('d-none')
-            console.log(stompClient)
-        }
-
-    })
-
-        const input = document.getElementById("message-value");
-
-// Execute a function when the user presses a key on the keyboard
-        input.addEventListener("keypress", function(event) {
-            // If the user presses the "Enter" key on the keyboard
-            if (event.key === "Enter") {
-                // Cancel the default action, if needed
-                // event.preventDefault();
-                // Trigger the button element with a click
-                document.getElementById("send-btn").click();
-
-
-            }
-        });
-
-
-
-}
-)
+  })
+  .catch((err) => console.error("AI error:", err));
