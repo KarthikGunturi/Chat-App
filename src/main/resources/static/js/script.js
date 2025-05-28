@@ -57,19 +57,25 @@ document.getElementById("logout").addEventListener("click", () => {
   document.getElementById("message-container").innerHTML = "";
   name = null;
 });
+// ...existing code...
 
-// Send user message to your AI backend
-fetch("/ask", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ question: content }),
-})
-  .then((res) => res.json())
-  .then((data) => {
-    if (data && data.answer) {
-      addMessageToUI("AI", data.answer, false);
-    }
+
+// Send AI query
+document.getElementById("ai-send-btn").addEventListener("click", () => {
+  const question = document.getElementById("message-value").value.trim();
+  if (!question) return;
+  addMessageToUI(name, question, true);
+  document.getElementById("message-value").value = "";
+  fetch("/api/ai/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
   })
-  .catch((err) => console.error("AI error:", err));
+      .then((res) => res.text())
+      .then((answer) => {
+        addMessageToUI("AI", answer, false);
+        document.getElementById("ai-box").style.display = "none";
+        document.getElementById("ai-query").value = "";
+      })
+      .catch((err) => console.error("AI error:", err));
+});
